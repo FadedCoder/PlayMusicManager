@@ -1,0 +1,6 @@
+gmusicapi
+django
+youtube-dl
+google-auth
+google-auth-httplib2
+jsonpickle

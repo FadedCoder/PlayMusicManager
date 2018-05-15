@@ -1,0 +1,12 @@
+{% extends 'core/base.html' %}
+{% block header %}
+<h2 class="header center orange-text">Upload them now!</h2>
+<form method="POST" enctype="multipart/form-data">
+    <div class="row center">
+	<input type="file" name="musicfile">
+    </div>
+    <div class="row center">
+	<button class="btn waves-effect waves-light" type="submit">Submit</button>
+    </div>
+</form>
+{% endblock %}

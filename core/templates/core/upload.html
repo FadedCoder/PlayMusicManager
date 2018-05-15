@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+{% block header %}
+<h2 class="header center orange-text">Upload them now!</h2>
+<h4 class="header center">Music Manager working: <b>{{ can_login }}</b></h4>
+{% endblock %}
+{% block body %}
+<div class="container">
+    {% if not success %}
+    <div id="form">
+	<form id="upload-form" method="POST" enctype="multipart/form-data">
+	    {% csrf_token %}
+	    <div class="row">
+		<div class="col">
+		    {{ form.non_field_errors }}
+		</div>
+	    </div>
+	    {% for field in form %}
+	    {% if field == form.music_file %}
+	    <div class="row">
+		<div class="input-field col s12 m9">
+		    Music (required): {{ field }}
+		</div>
+		<div class="col s12 m3">
+		    {{ field.errors.as_text }}
+		</div>
+	    </div>
+	    {% else %}
+	    <div class="row">
+		<div class="input-field col s12 m9">
+		    {{ field }}
+		    <label for="{{ field.auto_id }}">{{ field.label }} (optional)</label>
+		</div>
+		<div class="col s12 m3">
+		    {{ field.errors.as_text }}
+		</div>
+	    </div>
+	    {% endif %}
+	    {% endfor %}
+	    <button class="btn waves-effect waves-light" id="submit-btn">Submit</button>
+	</form>
+    </div>
+    {% else %}
+    <div id="upload-progress">
+	<!--<div class="progress">
+	     <div class="determinate" id="progress-bar"></div>
+	     </div>-->
+	<h5 class="center" id="progress-text">Request submitted! Will be done within 5 mins or less.</h5>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+{% block header %}
+<h1 class="header center orange-text">Registration</h1>
+{% endblock %}
+{% block body %}
+<div class="container">
+    <form method="POST">
+	{% csrf_token %}
+	<div class="row">
+	    <div class="col">
+		{{ form.non_field_errors }}
+	    </div>
+	</div>
+	{% for field in form %}
+	{% if field == form.oauth_code %}
+	<div class="row">
+	    <div class="s12 offset-s2">
+		Go to <a href="{{ auth_uri }}" target="_blank">this link</a>, perform required steps, and copy the OAuth code. Then paste it here.
+	    </div>
+	</div>
+	<div class="row">
+	    <div class="input-field col s12">
+		{{ field }}
+		<label for="{{ field.auto_id }}">Enter OAuth code</label>
+	    </div>
+	    <div class="col s12 m3">
+		{{ field.errors.as_text }}
+	    </div>
+	</div>
+	{% else %}
+	<div class="row">
+	    <div class="input-field col s12">
+		{{ field }}
+		<label for="{{ field.auto_id }}">{{ field.label }}</label>
+	    </div>
+	    <div class="col s12 m3">
+		{{ field.errors.as_text }}
+	    </div>
+	</div>
+	{% endif %}
+	{% endfor %}
+	<button class="btn waves-effect waves-light" type="submit">Submit</button>
+    </form>
+    {{ txt }}
+</div>
+{% endblock %}
