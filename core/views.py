@@ -29,12 +29,13 @@ def index(request):
         login_success = manager.login(
             credential,
             uploader_name="GMusicManagerOnline - {}".format(request.user.username))
-        quota = manager.get_quota()
-        args.update({
-            'login_success': login_success,
-            'currently_uploaded': quota[0],
-            'upload_limit': quota[1]
-        })
+        args.update({'login_success': login_success})
+        if login_success:
+            quota = manager.get_quota()
+            args.update({
+                'currently_uploaded': quota[0],
+                'upload_limit': quota[1]
+            })
         manager.logout()
     return render(request, 'core/index.html', args)
 
