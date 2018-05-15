@@ -19,3 +19,12 @@ class MusicUploadForm(forms.ModelForm):
         model = Music
         fields = ('music_file', 'title', 'album', 'composer', 'genre', 'language',
                   'artist', 'album_artist',)
+
+
+class YoutubeUploadForm(forms.ModelForm):
+    youtube_url = forms.URLField()
+
+    class Meta:
+        model = Music
+        fields = ('youtube_url', 'title', 'album', 'composer', 'genre', 'language',
+                  'artist', 'album_artist',)
