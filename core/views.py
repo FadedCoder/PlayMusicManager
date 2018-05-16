@@ -99,8 +99,8 @@ def upload(request):
                 os.remove(music_filepath)
             success, _, _ = manager.upload(  # Already transcoding.
                 post_filepath, enable_matching=True, enable_transcoding=False)
-            # if os.path.isfile(post_filepath):
-            #    os.remove(post_filepath)
+            if os.path.isfile(post_filepath):
+                os.remove(post_filepath)
             args.update({'success': True})
         args.update({'form': form})
     manager.logout()
