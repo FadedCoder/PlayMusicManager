@@ -93,14 +93,14 @@ def upload(request):
                         'artist', 'album_artist']
                        if getattr(music, i) != ""}
             logger.info("Transcoding metadata: " + str(options))
-            options.update({'quality': '320'})
+            options.update({'quality': '320k'})
             _transcode(music_filepath, options, post_filepath)
             if os.path.isfile(music_filepath):
                 os.remove(music_filepath)
             success, _, _ = manager.upload(  # Already transcoding.
                 post_filepath, enable_matching=True, enable_transcoding=False)
-            if os.path.isfile(post_filepath):
-                os.remove(post_filepath)
+            # if os.path.isfile(post_filepath):
+            #    os.remove(post_filepath)
             args.update({'success': True})
         args.update({'form': form})
     manager.logout()
@@ -196,7 +196,7 @@ def _locate_mp3_transcoder():
 def _transcode(filepath, options, out_filepath):
     cmd_path = _locate_mp3_transcoder()
     cmd = [cmd_path, '-i', filepath, '-c', 'copy']
-    cmd.extend(['-q:a', str(options.pop('quality'))])
+    cmd.extend(['-b:a', str(options.pop('quality'))])
     for (i, j) in options.items():
         cmd.extend(['-metadata', '{0}={1}'.format(i, j)])
     cmd.extend(['-c:a', 'libmp3lame', out_filepath])
