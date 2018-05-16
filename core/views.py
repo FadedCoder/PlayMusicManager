@@ -90,7 +90,9 @@ def upload(request):
             post_filepath = music_filepath + ".mp3"
             options = {i: getattr(music, i) for i in
                        ['title', 'album', 'composer', 'genre', 'language',
-                        'artist', 'album_artist']}
+                        'artist', 'album_artist']
+                       if getattr(music, i) != ""}
+            logger.info("Transcoding metadata: " + str(options))
             options.update({'quality': '320'})
             _transcode(music_filepath, options, post_filepath)
             if os.path.isfile(music_filepath):
@@ -193,11 +195,11 @@ def _locate_mp3_transcoder():
 
 def _transcode(filepath, options, out_filepath):
     cmd_path = _locate_mp3_transcoder()
-    cmd = [cmd_path, '-i', filepath]
+    cmd = [cmd_path, '-i', filepath, '-c', 'copy']
     cmd.extend(['-q:a', str(options.pop('quality'))])
     for (i, j) in options.items():
         cmd.extend(['-metadata', '{0}={1}'.format(i, j)])
-    cmd.extend(['-c', 'libmp3lame', out_filepath])
+    cmd.extend(['-c:a', 'libmp3lame', out_filepath])
     logger.info('Running transcode command %r', cmd)
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
