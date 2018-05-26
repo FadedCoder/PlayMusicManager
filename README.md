@@ -12,6 +12,13 @@ Uses `Django 2`.
 git clone https://github.com/FadedCoder/PlayMusicManager.git
 # OR
 git clone git@github.com:FadedCoder/PlayMusicManager.git
+cd PlayMusicManager
+python3 -m venv venv
+source venv/bin/activate
+cd custom-oauth2client
+python setup.py install
+cd ..
+pip install -r requirements.txt
 python manage.py makemigrations
 python manage.py migrate
 python manage.py runserver 8080
