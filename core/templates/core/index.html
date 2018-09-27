@@ -15,5 +15,14 @@
 {% endif %}
 {% endblock %}
 {% block body %}
-BODY
+{% if default_fields_form %}
+<div class="container">
+<h4>Default Fields for Music Upload</h4>
+<form method="POST">
+	{% csrf_token %}
+	{{ default_fields_form }}
+	<button class="btn waves-effect waves-light" type="submit">Submit</button>
+</form>
+</div>
+{% endif %}
 {% endblock %}

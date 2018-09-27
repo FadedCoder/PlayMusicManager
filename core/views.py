@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.contrib.auth import login, authenticate
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
-from .forms import SignUpForm, MusicUploadForm, YoutubeUploadForm
+from .forms import SignUpForm, MusicUploadForm, YoutubeUploadForm, DefaultFieldsForm
 from .models import Profile
 from gmusicapi.protocol import musicmanager
 from gmusicapi import Musicmanager
@@ -14,6 +14,7 @@ import youtube_dl
 import os
 import subprocess
 import logging
+import threading
 import time
 from distutils import spawn
 
@@ -35,9 +36,15 @@ def index(request):
         args.update({'login_success': login_success})
         if login_success:
             quota = manager.get_quota()
+            default_fields_form = DefaultFieldsForm(
+                request.POST or None, instance=request.user.profile)
+            if default_fields_form.is_valid():
+                default_fields_form.save()
+                return redirect('index')
             args.update({
                 'currently_uploaded': quota[0],
-                'upload_limit': quota[1]
+                'upload_limit': quota[1],
+                'default_fields_form': default_fields_form
             })
         manager.logout()
     return render(request, 'core/index.html', args)
@@ -107,6 +114,34 @@ def upload(request):
     return render(request, 'core/upload.html', args)
 
 
+def _process_youtube_upload(youtube_url, ydl_opts, music, metadata_opts, credential, uploader_name):
+    manager = Musicmanager()
+    manager.login(credential, uploader_name=uploader_name)
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(youtube_url, download=False)
+        if music.title == "":
+            music.title = info_dict.get('title', None)
+            music.save()
+            metadata_opts = {i: getattr(music, i) for i in
+                             ['title', 'album', 'composer', 'genre', 'language',
+                              'artist', 'album_artist']}
+            logger.debug('New metadata opts: ' + str(metadata_opts))
+            ffmpeg_mp3_metadata_pp = FFmpegMP3MetadataPP(ydl, metadata_opts)
+            ydl.add_post_processor(ffmpeg_mp3_metadata_pp)
+            ydl.download([youtube_url])
+            music_filepath = ydl.prepare_filename(info_dict)
+            if not music_filepath.endswith('.mp3'):
+                music_filepath = music_filepath.replace(
+                    music_filepath[music_filepath.rfind('.'):], '.mp3'
+                )
+                logger.debug("Music filepath: " + music_filepath)
+    manager.upload(music_filepath,
+                   enable_matching=True,
+                   enable_transcoding=False)  # Already transcoding.
+    if os.path.isfile(music_filepath):
+        os.remove(music_filepath)
+
+
 def youtube_upload(request):
         # TODO: Async status updates?
     if not request.user.is_authenticated:
@@ -125,10 +160,15 @@ def youtube_upload(request):
         form = YoutubeUploadForm(request.POST)
         if form.is_valid():
             music = form.save()
+            for i in ['title', 'album', 'composer', 'genre', 'language',
+                      'artist', 'album_artist']:
+                if getattr(music, i) == "":
+                    setattr(music, i, getattr(request.user.profile, "default_" + i))
+            music.save()
             youtube_url = request.POST.get('youtube_url')
             metadata_opts = {i: getattr(music, i) for i in
                              ['title', 'album', 'composer', 'genre', 'language',
-                              'artist', 'album_artist']}
+                              'artist', 'album_artist'] if getattr(music, i) != ""}
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'outtmpl': settings.MEDIA_ROOT + "/{}{}.%(ext)s".format(
@@ -139,29 +179,10 @@ def youtube_upload(request):
                     'preferredquality': '320',
                 }],
             }
-            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-                info_dict = ydl.extract_info(youtube_url, download=False)
-                if music.title == "":
-                    music.title = info_dict.get('title', None)
-                    music.save()
-                    metadata_opts = {i: getattr(music, i) for i in
-                                     ['title', 'album', 'composer', 'genre', 'language',
-                                      'artist', 'album_artist']}
-                    logger.debug('New metadata opts: ' + str(metadata_opts))
-                ffmpeg_mp3_metadata_pp = FFmpegMP3MetadataPP(ydl, metadata_opts)
-                ydl.add_post_processor(ffmpeg_mp3_metadata_pp)
-                ydl.download([youtube_url])
-                music_filepath = ydl.prepare_filename(info_dict)
-                if not music_filepath.endswith('.mp3'):
-                    music_filepath = music_filepath.replace(
-                        music_filepath[music_filepath.rfind('.'):], '.mp3'
-                    )
-                logger.debug("Music filepath: " + music_filepath)
-            manager.upload(music_filepath,
-                           enable_matching=True,
-                           enable_transcoding=False)  # Already transcoding.
-            if os.path.isfile(music_filepath):
-                os.remove(music_filepath)
+            upload_args = (youtube_url, ydl_opts, music, metadata_opts, credential,
+                           "GMusicManagerOnline - {}".format(request.user.username))
+            upload_thread = threading.Thread(target=_process_youtube_upload, args=upload_args)
+            upload_thread.start()
             args.update({'success': True})
         args.update({'form': form})
     manager.logout()

@@ -8,6 +8,13 @@ from oauth2client.contrib.django_util.models import CredentialsField
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     google_oauth = CredentialsField()
+    default_title = models.CharField(max_length=100, blank=True)
+    default_album = models.CharField(max_length=100, blank=True)
+    default_composer = models.CharField(max_length=100, blank=True)
+    default_genre = models.CharField(max_length=100, blank=True)
+    default_language = models.CharField(max_length=100, blank=True)
+    default_artist = models.CharField(max_length=100, blank=True)
+    default_album_artist = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return self.user.username
